@@ -30,7 +30,7 @@ Go 语言作为一门现代静态语言，是有后发优势的。它引入了�
 
 先定义一个接口，和使用此接口作为参数的函数：
 
-```golang
+```go
 type IGreeting interface {
 	sayHello()
 }
@@ -42,7 +42,7 @@ func sayHello(i IGreeting) {
 
 再来定义两个结构体：
 
-```golang
+```go
 type Go struct {}
 func (g Go) sayHello() {
 	fmt.Println("Hi, I am GO!")
@@ -56,7 +56,7 @@ func (p PHP) sayHello() {
 
 最后，在 main 函数里调用 sayHello() 函数：
 
-```golang
+```go
 func main() {
 	golang := Go{}
 	php := PHP{}

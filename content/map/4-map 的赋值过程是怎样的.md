@@ -44,7 +44,7 @@ mapassign 有一个系列的函数，根据 key 类型的不同，编译器会�
 
 另外，有一个重要的点要说一下。前面说的找到 key 的位置，进行赋值操作，实际上并不准确。我们看 `mapassign` 函数的原型就知道，函数并没有传入 value 值，所以赋值操作是什么时候执行的呢？
 
-```golang
+```go
 func mapassign(t *maptype, h *hmap, key unsafe.Pointer) unsafe.Pointer
 ```
 

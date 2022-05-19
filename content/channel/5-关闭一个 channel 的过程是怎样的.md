@@ -6,7 +6,7 @@ slug: /close
 
 关闭某个 channel，会执行函数 `closechan`：
 
-```golang
+```go
 func closechan(c *hchan) {
 	// 关闭一个 nil channel，panic
 	if c == nil {

@@ -6,7 +6,7 @@ slug: /sysmon
 
 在 `runtime.main()` 函数中，执行 `runtime_init()` 前，会启动一个 sysmon 的监控线程，执行后台监控任务：
 
-```golang
+```go
 systemstack(func() {
 	// 创建监控线程，该线程独立于调度器，不需要跟 p 关联即可运行
 	newm(sysmon, nil)
@@ -15,7 +15,7 @@ systemstack(func() {
 
 `sysmon` 函数不依赖 P 直接执行，通过 newm 函数创建一个工作线程：
 
-```golang
+```go
 func newm(fn func(), _p_ *p) {
 	// 创建 m 对象
 	mp := allocm(_p_, fn)
@@ -34,7 +34,7 @@ func newm(fn func(), _p_ *p) {
 
 先调用 `allocm` 在堆上创建一个 m，接着调用 `newosproc` 函数启动一个工作线程：
 
-```golang
+```go
 // src/runtime/os_linux.go
 //go:nowritebarrier
 func newosproc(mp *m, stk unsafe.Pointer) {
@@ -48,7 +48,7 @@ func newosproc(mp *m, stk unsafe.Pointer) {
 
 核心就是调用 clone 函数创建系统线程，新线程从 mstart 函数开始执行。`clone` 函数由汇编语言实现：
 
-```golang
+```go
 // int32 clone(int32 flags, void *stk, M *mp, G *gp, void (*fn)(void));
 TEXT runtime·clone(SB),NOSPLIT,$0
     // 准备系统调用的参数
@@ -126,7 +126,7 @@ nog:
 
 最后执行 mstart 函数，这是在 newosproc 函数传递进来的。`mstart` 函数再调用 `mstart1`，在 `mstart1` 里会执行这一行：
 
-```golang
+```go
 // 执行启动函数。初始化过程中，fn == nil
 if fn := _g_.m.mstartfn; fn != nil {
 	fn()
@@ -145,7 +145,7 @@ if fn := _g_.m.mstartfn; fn != nil {
 
 和调度相关的，我们只关心 retake 函数：
 
-```golang
+```go
 func retake(now int64) uint32 {
 	n := 0
 	// 遍历所有的 p
@@ -227,7 +227,7 @@ func retake(now int64) uint32 {
 
 确定要抢占当前 p 后，先使用原子操作将 p 的状态修改为 `_Pidle`，最后调用 `handoffp` 进行抢占。
 
-```golang
+```go
 func handoffp(_p_ *p) {
 	// 如果 p 本地有工作或者全局有工作，需要绑定一个 m
 	if !runqempty(_p_) || sched.runqsize != 0 {
@@ -272,7 +272,7 @@ func handoffp(_p_ *p) {
 
 我们接着来看 `startm` 函数都做了些什么：
 
-```golang
+```go
 // runtime/proc.go
 // 
 // 调用 m 来绑定 p，如果没有 m，那就新建一个
@@ -332,7 +332,7 @@ func startm(_p_ *p, spinning bool) {
 
 搞定了 p，接下来看 m。先调用 `mget` 函数从全局空闲的 m 队列里获取一个 m，如果没找到 m，则要调用 newm 新创建一个 m，并且如果设置了 spinning 为 true 的话，先要设置好 mstartfn：
 
-```golang
+```go
 func mspinning() {
 	// startm's caller incremented nmspinning. Set the new M's spinning.
 	getg().m.spinning = true
@@ -343,7 +343,7 @@ func mspinning() {
 
 接下来是正常情况下（找到了 p 和 m）的处理：
 
-```golang
+```go
 mp.spinning = spinning
 // 设置 m 马上要结合的 p
 mp.nextp.set(_p_)
@@ -353,7 +353,7 @@ notewakeup(&mp.park)
 
 设置 nextp 为找到的 p，调用 `notewakeup` 唤醒 m。之前我们讲 findrunnable 函数的时候，对于最后没有找到工作的 m，我们调用 `notesleep(&_g_.m.park)`，使得 m 进入睡眠状态。现在终于有工作了，需要老将出山，将其唤醒：
 
-```golang
+```go
 // src/runtime/lock_futex.go
 func notewakeup(n *note) {
 	// 设置 n.key = 1, 被唤醒的线程通过查看该值是否等于 1 
@@ -373,7 +373,7 @@ func notewakeup(n *note) {
 
 调用 `futexwakeup` 来唤醒工作线程，它和 `futexsleep` 是相对的。
 
-```golang
+```go
 func futexwakeup(addr *uint32, cnt uint32) {
 	// 调用 futex 函数唤醒工作线程
 	ret := futex(unsafe.Pointer(addr), _FUTEX_WAKE, cnt, nil, nil, 0)
@@ -397,7 +397,7 @@ func futexwakeup(addr *uint32, cnt uint32) {
 
 接下来我们就来分析当 P 处于 `_Prunning` 状态的情况。`sysmon` 扫描每个 p 时，都会记录下当前调度器调度的次数和当前时间，数据记录在结构体：
 
-```golang
+```go
 type sysmontick struct {
 	schedtick   uint32
 	schedwhen   int64
@@ -412,7 +412,7 @@ type sysmontick struct {
 
 如果发现运行时间超过了 10 ms，则要调用 `preemptone(_p_)` 发起抢占的请求：
 
-```golang
+```go
 func preemptone(_p_ *p) bool {
 	mp := _p_.m.ptr()
 	if mp == nil || mp == getg().m {
@@ -439,7 +439,7 @@ func preemptone(_p_ *p) bool {
 
 举一个简单的例子：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -503,7 +503,7 @@ go tool compile -S main.go
 
 比较 SP 寄存器（代表当前 main goroutine 的栈顶寄存器）和 16(CX)，我们看下 g 结构体：
 
-```golang
+```go
 type g struct {
 	// goroutine 使用的栈
 	stack       stack   // offset known to runtime/cgo
@@ -515,7 +515,7 @@ type g struct {
 
 对象 g 的第一个字段是 stack 结构体：
 
-```golang
+```go
 type stack struct {
 	lo uintptr
 	hi uintptr
@@ -597,7 +597,7 @@ TEXT runtime·morestack(SB),NOSPLIT,$0-0
 
 最后，将 g0 的地址保存到 tls 本地存储，并且切到 g0 栈执行之后的代码。继续调用 newstack 函数：
 
-```golang
+```go
 func newstack(ctxt unsafe.Pointer) {
 	// thisg = g0
 	thisg := getg()
@@ -659,7 +659,7 @@ func newstack(ctxt unsafe.Pointer) {
 
 中间又处理了很多判断流程，再次判断 preempt 标志是 true 时，调用 `gopreempt_m(gp)` 将 gp 切换出去。
 
-```golang
+```go
 func gopreempt_m(gp *g) {
 	if trace.enabled {
 		traceGoPreempt()
@@ -670,7 +670,7 @@ func gopreempt_m(gp *g) {
 
 最终调用 `goschedImpl` 函数：
 
-```golang
+```go
 func goschedImpl(gp *g) {
 	status := readgstatus(gp)
 	if status&^_Gscan != _Grunning {

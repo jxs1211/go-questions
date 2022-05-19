@@ -6,7 +6,7 @@ slug: /link-process
 
 我们从一个 `Hello World` 的例子开始：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -80,7 +80,7 @@ Go 源码里的编译器源码位于 `src/cmd/compile` 路径下，链接器源�
 
 例如，对于如下的代码：
 
-```golang
+```go
 slice[i] = i * (2 + 6)
 ```
 
@@ -111,7 +111,7 @@ src/cmd/compile/internal/syntax/token.go
 
 感受一下：
 
-```golang
+```go
 var tokstrings = [...]string{
 	// source control
 	_EOF: "EOF",
@@ -181,7 +181,7 @@ src/cmd/compile/internal/syntax/scanner.go
 
 其中最关键的函数就是 next 函数，它不断地读取下一个字符（不是下一个字节，因为 Go 语言支持 Unicode 编码，并不是像我们前面举得 ASCII 码的例子，一个字符只有一个字节），直到这些字符可以构成一个 Token。
 
-```golang
+```go
 func (s *scanner) next() {
 // ……
 

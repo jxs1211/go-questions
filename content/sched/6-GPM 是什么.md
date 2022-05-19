@@ -14,7 +14,7 @@ G、P、M 是 Go 调度器的三个核心组件，各司其职。在它们精密
 
 本系列使用的代码版本是 1.9.2，来看一下 g 的源码：
 
-```golang
+```go
 type g struct {
 
 	// goroutine 使用的栈
@@ -82,7 +82,7 @@ type g struct {
 
 `g` 结构体关联了两个比较简单的结构体，stack 表示 goroutine 运行时的栈：
 
-```golang
+```go
 // 描述栈的数据结构，栈的范围：[lo, hi)
 type stack struct {
     // 栈顶，低地址
@@ -94,7 +94,7 @@ type stack struct {
 
 Goroutine 运行时，光有栈还不行，至少还得包括 PC，SP 等寄存器，gobuf 就保存了这些值：
 
-```golang
+```go
 type gobuf struct {
 	// 存储 rsp 寄存器的值
 	sp   uintptr
@@ -116,7 +116,7 @@ type gobuf struct {
 
 结构体 m 的源码如下：
 
-```golang
+```go
 // m 代表工作线程，保存了自身使用的栈信息
 type m struct {
 	// 记录工作线程（也就是内核线程）使用的栈信息。在执行调度代码时需要使用
@@ -207,7 +207,7 @@ type m struct {
 
 一个 M 只有绑定 P 才能执行 goroutine，当 M 被阻塞时，整个 P 会被传递给其他 M ，或者说整个 P 被接管。
 
-```golang
+```go
 // p 保存 go 运行时所必须的资源
 type p struct {
 	lock mutex

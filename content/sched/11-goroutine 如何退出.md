@@ -6,7 +6,7 @@ slug: /goroutine-exit
 
 上一讲说到调度器将 main goroutine 推上舞台，为它铺好了道路，开始执行 `runtime.main` 函数。这一讲，我们探索 main goroutine 以及普通 goroutine 从执行到退出的整个过程。
 
-```golang
+```go
 // The main goroutine.
 func main() {
     // g = main goroutine，不再是 g0 了
@@ -96,7 +96,7 @@ func main() {
 
 不过，main goroutine 实际上就是代表用户的 main 函数，它都执行完了，肯定是用户的任务都执行完了，直接退出就可以了，就算有其他的 goroutine 没执行完，同样会直接退出。
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -129,7 +129,7 @@ JMP	BX
 
 `gp` 执行完后，RET 指令弹出 `goexit` 函数地址（实际上是 funcPC(goexit)+1），CPU 跳转到 `goexit` 的第二条指令继续执行：
 
-```golang
+```go
 // src/runtime/asm_amd64.s
 
 // The top-most function running on a goroutine
@@ -143,7 +143,7 @@ TEXT runtime·goexit(SB),NOSPLIT,$0-0
 
 直接调用 `runtime·goexit1`：
 
-```golang
+```go
 // src/runtime/proc.go
 // Finishes execution of the current goroutine.
 func goexit1() {
@@ -154,7 +154,7 @@ func goexit1() {
 
 调用 `mcall` 函数：
 
-```golang
+```go
 // 切换到 g0 栈，执行 fn(g)
 // Fn 不能返回
 TEXT runtime·mcall(SB), NOSPLIT, $0-8
@@ -203,7 +203,7 @@ TEXT runtime·mcall(SB), NOSPLIT, $0-8
 
 函数参数是：
 
-```golang
+```go
 type funcval struct {
 	fn uintptr
 	// variable-size, fn-specific data here
@@ -232,7 +232,7 @@ L40 调用 goexit0 函数，这已经是在 g0 栈上执行了，函数参数就
 
 来继续看 goexit0：
 
-```golang
+```go
 // goexit continuation on g0.
 // 在 g0 上执行
 func goexit0(gp *g) {

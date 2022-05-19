@@ -12,7 +12,7 @@ slug: /range
 
 我先写一个简单的代码样例，假装不知道遍历过程具体调用的是什么函数：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -37,7 +37,7 @@ go tool compile -S main.go
 
 关键的几行汇编代码如下：
 
-```golang
+```go
 // ......
 0x0124 00292 (test16.go:9)      CALL    runtime.mapiterinit(SB)
 
@@ -56,7 +56,7 @@ go tool compile -S main.go
 
 迭代器的结构体定义：
 
-```golang
+```go
 type hiter struct {
 	// key 指针
 	key         unsafe.Pointer
@@ -92,7 +92,7 @@ type hiter struct {
 
 前面已经提到过，即使是对一个写死的 map 进行遍历，每次出来的结果也是无序的。下面我们就可以近距离地观察他们的实现了。
 
-```golang
+```go
 // 生成随机数 r
 r := uintptr(fastrand())
 if h.B > 31-bucketCntBits {
@@ -123,7 +123,7 @@ it.offset = uint8(r >> h.B & (bucketCnt - 1))
 
 因为 3 号 bucket 对应老的 1 号 bucket，因此先检查老 1 号 bucket 是否已经被搬迁过。判断方法就是：
 
-```golang
+```go
 func evacuated(b *bmap) bool {
 	h := b.tophash[0]
 	return h > empty && h < minTopHash
@@ -132,7 +132,7 @@ func evacuated(b *bmap) bool {
 
 如果 b.tophash[0] 的值在标志值范围内，即在 (0,4) 区间里，说明已经被搬迁过了。
 
-```golang
+```go
 empty = 0
 evacuatedEmpty = 1
 evacuatedX = 2

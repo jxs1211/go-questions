@@ -46,7 +46,7 @@ go version go1.9.2 darwin/amd64
 ## map 内存模型
 在源码中，表示 map 的结构体是 hmap，它是 hashmap 的“缩写”：
 
-```golang
+```go
 // A header for a Go map.
 type hmap struct {
     // 元素个数，调用 len(map) 时，直接返回此值
@@ -74,7 +74,7 @@ type hmap struct {
 
 buckets 是一个指针，最终它指向的是一个结构体：
 
-```golang
+```go
 type bmap struct {
 	tophash [bucketCnt]uint8
 }
@@ -82,7 +82,7 @@ type bmap struct {
 
 但这只是表面(src/runtime/hashmap.go)的结构，编译期间会给它加料，动态地创建一个新的结构：
 
-```golang
+```go
 type bmap struct {
     topbits  [8]uint8
     keys     [8]keytype
@@ -100,7 +100,7 @@ type bmap struct {
 
 当 map 的 key 和 value 都不是指针，并且 size 都小于 128 字节的情况下，会把 bmap 标记为不含指针，这样可以避免 gc 时扫描整个 hmap。但是，我们看 bmap 其实有一个 overflow 的字段，是指针类型的，破坏了 bmap 不含指针的设想，这时会把 overflow 移动到 extra 字段来。
 
-```golang
+```go
 type mapextra struct {
 	// overflow[0] contains overflow buckets for hmap.buckets.
 	// overflow[1] contains overflow buckets for hmap.oldbuckets.
@@ -119,7 +119,7 @@ bmap 是存放 k-v 的地方，我们把视角拉近，仔细看 bmap 的内部�
 
 例如，有这样一个类型的 map：
 
-```golang
+```go
 map[int64]int8
 ```
 
@@ -130,7 +130,7 @@ map[int64]int8
 ## 创建 map
 从语法层面上来说，创建 map 很简单：
 
-```golang
+```go
 ageMp := make(map[string]int)
 // 指定 map 长度
 ageMp := make(map[string]int, 8)
@@ -141,7 +141,7 @@ var ageMp map[string]int
 
 通过汇编语言可以看到，实际上底层调用的是 `makemap` 函数，主要做的工作就是初始化 `hmap` 结构体的各种字段，例如计算 B 的大小，设置哈希种子 hash0 等等。
 
-```golang
+```go
 func makemap(t *maptype, hint int64, h *hmap, bucket unsafe.Pointer) *hmap {
 	// 省略各种条件检查...
 
@@ -186,13 +186,13 @@ func makemap(t *maptype, hint int64, h *hmap, bucket unsafe.Pointer) *hmap {
 
 注意，这个函数返回的结果：`*hmap`，它是一个指针，而我们之前讲过的 `makeslice` 函数返回的是 `Slice` 结构体：
 
-```golang
+```go
 func makeslice(et *_type, len, cap int) slice
 ```
 
 回顾一下 slice 的结构体定义：
 
-```golang
+```go
 // runtime/slice.go
 type slice struct {
     array unsafe.Pointer // 元素指针
@@ -217,7 +217,7 @@ map 的一个关键点在于，哈希函数的选择。在程序启动时，会�
 
 之前我们讲过，表示类型的结构体：
 
-```golang
+```go
 type _type struct {
 	size       uintptr
 	ptrdata    uintptr // size of memory prefix holding all pointers
@@ -235,7 +235,7 @@ type _type struct {
 
 其中 `alg` 字段就和哈希相关，它是指向如下结构体的指针：
 
-```golang
+```go
 // src/runtime/alg.go
 type typeAlg struct {
 	// (ptr to object, seed) -> hash
@@ -249,7 +249,7 @@ typeAlg 包含两个函数，hash 函数计算类型的哈希值，而 equal 函
 
 对于 string 类型，它的 hash、equal 函数如下：
 
-```golang
+```go
 func strhash(a unsafe.Pointer, h uintptr) uintptr {
 	x := (*stringStruct)(a)
 	return memhash(x.str, h, uintptr(x.len))
@@ -287,7 +287,7 @@ buckets 编号就是桶编号，当两个不同的 key 落在同一个桶中，�
 
 我们来看下源码吧，哈哈！通过汇编语言可以看到，查找某个 key 的底层函数是 `mapacess` 系列函数，函数的作用类似，区别在下一节会讲到。这里我们直接看 `mapacess1` 函数：
 
-```golang
+```go
 func mapaccess1(t *maptype, h *hmap, key unsafe.Pointer) unsafe.Pointer {
 	// ……
 	
@@ -385,7 +385,7 @@ func mapaccess1(t *maptype, h *hmap, key unsafe.Pointer) unsafe.Pointer {
 
 这里，说一下定位 key 和 value 的方法以及整个循环的写法。
 
-```golang
+```go
 // key 定位公式
 k := add(unsafe.Pointer(b), dataOffset+i*uintptr(t.keysize))
 
@@ -395,7 +395,7 @@ v := add(unsafe.Pointer(b), dataOffset+bucketCnt*uintptr(t.keysize)+i*uintptr(t.
 
 b 是 bmap 的地址，这里 bmap 还是源码里定义的结构体，只包含一个 tophash 数组，经编译器扩充之后的结构体才包含 key，value，overflow 这些字段。dataOffset 是 key 相对于 bmap 起始地址的偏移：
 
-```golang
+```go
 dataOffset = unsafe.Offsetof(struct {
 		b bmap
 		v int64
@@ -406,7 +406,7 @@ dataOffset = unsafe.Offsetof(struct {
 
 再说整个大循环的写法，最外层是一个无限循环，通过 
 
-```golang
+```go
 b = b.overflow(t)
 ```
 遍历所有的 bucket，这相当于是一个 bucket 链表。
@@ -419,7 +419,7 @@ b = b.overflow(t)
 
 下面的这几种状态就表征了 bucket 的情况：
 
-```golang
+```go
 // 空的 cell，也是初始时 bucket 的状态
 empty          = 0
 // 空的 cell，表示 cell 已经被迁移到新的 bucket
@@ -435,7 +435,7 @@ minTopHash     = 4
 
 源码里判断这个 bucket 是否已经搬迁完毕，用到的函数：
 
-```golang
+```go
 func evacuated(b *bmap) bool {
 	h := b.tophash[0]
 	return h > empty && h < minTopHash

@@ -7,7 +7,7 @@ slug: /struct
 # 数据结构
 底层数据结构需要看源码，版本为 go 1.9.2：
 
-```golang
+```go
 type hchan struct {
 	// chan 里元素数量
 	qcount   uint
@@ -46,7 +46,7 @@ type hchan struct {
 
 `waitq` 是 `sudog` 的一个双向链表，而 `sudog` 实际上是对 goroutine 的一个封装：
 
-```golang
+```go
 type waitq struct {
 	first *sudog
 	last  *sudog
@@ -64,7 +64,7 @@ type waitq struct {
 
 一般而言，使用 `make` 创建一个能收能发的通道：
 
-```golang
+```go
 // 无缓冲通道
 ch1 := make(chan int)
 // 有缓冲通道
@@ -73,7 +73,7 @@ ch2 := make(chan int, 10)
 
 通过[汇编](https://mp.weixin.qq.com/s/obnnVkO2EiFnuXk_AIDHWw)分析，我们知道，最终创建 chan 的函数是 `makechan`：
 
-```golang
+```go
 func makechan(t *chantype, size int64) *hchan
 ```
 
@@ -81,7 +81,7 @@ func makechan(t *chantype, size int64) *hchan
 
 具体来看下代码：
 
-```golang
+```go
 const hchanSize = unsafe.Sizeof(hchan{}) + uintptr(-int(unsafe.Sizeof(hchan{}))&(maxAlign-1))
 
 func makechan(t *chantype, size int64) *hchan {

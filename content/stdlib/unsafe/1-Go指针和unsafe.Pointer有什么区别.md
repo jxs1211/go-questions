@@ -14,7 +14,7 @@ Go 语言的作者之一 Ken Thompson 也是 C 语言的作者。所以，Go 可
 
 来看一个简单的例子：
 
-```golang
+```go
 a := 5
 p := &a
 
@@ -28,7 +28,7 @@ p = &a + 3
 
 例如下面这个简短的例子：
 
-```golang
+```go
 func main() {
 	a := int(100)
 	var f *float64
@@ -53,7 +53,7 @@ cannot use &a (type *int) as type *float64 in assignment
 
 unsafe.Pointer 在 unsafe 包：
 
-```golang
+```go
 type ArbitraryType int
 
 type Pointer *ArbitraryType
@@ -70,7 +70,7 @@ unsafe 包提供了 2 点重要的能力：
 
 pointer 不能直接进行数学运算，但可以把它转换成 uintptr，对 uintptr 类型进行数学运算，再转换成 pointer 类型。
 
-```golang
+```go
 // uintptr 是一个整数类型，它足够大，可以存储
 type uintptr uintptr
 ```

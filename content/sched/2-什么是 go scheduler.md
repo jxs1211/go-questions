@@ -69,7 +69,7 @@ Go scheduler 会启动一个后台线程 sysmon，用来检测长时间（超过
 
 但是配上 CPU 的超线程，1 个核可以变成 2 个，所以当我在 mac 上运行下面的程序时，会打印出 4。
 
-```golang
+```go
 func main() {
 	// NumCPU 返回当前进程可以用到的逻辑核心数
 	fmt.Println(runtime.NumCPU())

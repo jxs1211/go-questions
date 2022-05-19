@@ -4,7 +4,7 @@ title: "context.Value 的查找过程是怎样的"
 slug: /find-value
 ---
 
-```golang
+```go
 type valueCtx struct {
 	Context
 	key, val interface{}
@@ -13,7 +13,7 @@ type valueCtx struct {
 
 它实现了两个方法：
 
-```golang
+```go
 func (c *valueCtx) String() string {
 	return fmt.Sprintf("%v.WithValue(%#v, %#v)", c.Context, c.key, c.val)
 }
@@ -30,7 +30,7 @@ func (c *valueCtx) Value(key interface{}) interface{} {
 
 创建 valueCtx 的函数：
 
-```golang
+```go
 func WithValue(parent Context, key, val interface{}) Context {
 	if key == nil {
 		panic("nil key")
@@ -52,7 +52,7 @@ func WithValue(parent Context, key, val interface{}) Context {
 
 取值的过程，实际上是一个递归查找的过程：
 
-```golang
+```go
 func (c *valueCtx) Value(key interface{}) interface{} {
 	if c.key == key {
 		return c.val

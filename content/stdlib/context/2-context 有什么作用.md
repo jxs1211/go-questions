@@ -28,7 +28,7 @@ context 包就是为了解决上面所说的这些问题而开发的：在 一�
 
 context 使用起来非常方便。源码里对外提供了一个创建根节点 context 的函数：
 
-```golang
+```go
 func Background() Context
 ```
 
@@ -36,7 +36,7 @@ background 是一个空的 context， 它不能被取消，没有值，也没有
 
 有了根节点 context，又提供了四个函数创建子节点 context：
 
-```golang
+```go
 func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
 func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
 func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
@@ -63,7 +63,7 @@ context 会在函数传递间传递。只需要在适当的时间调用 cancel �
 
 对于 Web 服务端开发，往往希望将一个请求处理的整个过程串起来，这就非常依赖于 Thread Local（对于 Go 可理解为单个协程所独有） 的变量，而在 Go 语言中并没有这个概念，因此需要在函数调用的时候传递 context。
 
-```golang
+```go
 package main
 
 import (
@@ -100,7 +100,7 @@ process over. trace_id=qcrao-2019
 
 当然，现实场景中可能是从一个 HTTP 请求中获取到的 Request-ID。所以，下面这个样例可能更适合：
 
-```golang
+```go
 const requestIDKey int = 0
 
 func WithRequestID(next http.Handler) http.Handler {
@@ -144,7 +144,7 @@ func main() {
 
 后端可能的实现如下：
 
-```golang
+```go
 func Perform() {
     for {
         calculatePos()
@@ -158,7 +158,7 @@ func Perform() {
 
 上面给出的简单做法，可以实现想要的效果，没有问题，但是并不优雅，并且一旦协程数量多了之后，并且各种嵌套，就会很麻烦。优雅的做法，自然就要用到 context。
 
-```golang
+```go
 func Perform(ctx context.Context) {
     for {
         calculatePos()
@@ -177,7 +177,7 @@ func Perform(ctx context.Context) {
 
 主流程可能是这样的：
 
-```golang
+```go
 ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 go Perform(ctx)
 
@@ -191,7 +191,7 @@ cancel()
 # 防止 goroutine 泄漏
 前面那个例子里，goroutine 还是会自己执行完，最后返回，只不过会多浪费一些系统资源。这里改编一个“如果不用 context 取消，goroutine 就会泄漏的例子”，来自参考资料：`【避免协程泄漏】`。
 
-```golang
+```go
 func gen() <-chan int {
 	ch := make(chan int)
 	go func() {
@@ -208,7 +208,7 @@ func gen() <-chan int {
 
 这是一个可以生成无限整数的协程，但如果我只需要它产生的前 5 个数，那么就会发生 goroutine 泄漏：
 
-```golang
+```go
 func main() {
 	for n := range gen() {
 		fmt.Println(n)
@@ -224,7 +224,7 @@ func main() {
 
 用 context 改进这个例子：
 
-```golang
+```go
 func gen(ctx context.Context) <-chan int {
 	ch := make(chan int)
 	go func() {

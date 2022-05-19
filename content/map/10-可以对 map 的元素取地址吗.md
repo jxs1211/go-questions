@@ -6,7 +6,7 @@ slug: /element-address
 
 无法对 map 的 key 或 value 进行取址。以下代码不能通过编译：
 
-```golang
+```go
 package main
 
 import "fmt"

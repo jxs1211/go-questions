@@ -15,7 +15,7 @@ slug: /polymorphism
 
 看一个实现了多态的代码例子：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -79,7 +79,7 @@ func (p Programmer) growUp() {
 
 代码里先定义了 1 个 `Person` 接口，包含两个函数：
 
-```golang
+```go
 job()
 growUp()
 ```
@@ -88,7 +88,7 @@ growUp()
 
 之后，我又定义了函数参数是 `Person` 接口的两个函数：
 
-```golang
+```go
 func whatJob(p Person)
 func growUp(p Person)
 ```

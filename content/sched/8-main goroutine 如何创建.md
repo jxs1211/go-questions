@@ -35,7 +35,7 @@ RET
 
 重点来看 `newproc` 函数：
 
-```golang
+```go
 // src/runtime/proc.go
 // 创建一个新的 g，运行 fn 函数，需要 siz byte 的参数
 // 将其放至 G 队列等待运行
@@ -47,7 +47,7 @@ func newproc(siz int32, fn *funcval)
 
 从这里开始要进入 hard 模式了，打起精神！当我们随手一句：
 
-```golang
+```go
 go func() {
     // 要做的事
 }()
@@ -59,7 +59,7 @@ go func() {
 
 再回过头看，构造 newproc 函数调用栈的时候，第一个参数是 0，因为 runtime.main 函数没有参数：
 
-```golang
+```go
 // src/runtime/proc.go
 
 func main()
@@ -75,7 +75,7 @@ func main()
 
 继续看代码，newproc 函数的第二个参数：
 
-```golang
+```go
 type funcval struct {
 	fn uintptr
 	// variable-size, fn-specific data here
@@ -86,7 +86,7 @@ type funcval struct {
 
 参考资料【欧神 关键字 go】有一个例子：
 
-```golang
+```go
 package main
 
 func hello(msg string) {
@@ -104,7 +104,7 @@ func main() {
 
 栈顶是 siz，再往上是函数的地址，再往上就是传给 hello 函数的参数，string 在这里是一个地址。因此前面代码里先 push 参数的地址，再 push 参数大小。
 
-```golang
+```go
 // src/runtime/proc.go
 
 //go:nosplit
@@ -131,7 +131,7 @@ func newproc(siz int32, fn *funcval) {
 
 一鼓作气，继续看 `newproc1` 函数，为了连贯性，我先将整个函数的代码贴出来，并且加上了注释。当然，这篇文章不会涉及到所有的代码，只会讲部分内容。放在这里，方便阅读后面的文章时对照：
 
-```golang
+```go
 // 创建一个新的 g 来跑 fn
 func newproc1(fn *funcval, argp *uint8, narg int32, nret int32, callerpc uintptr) *g {
 	// 当前 goroutine 的指针
@@ -241,7 +241,7 @@ func newproc1(fn *funcval, argp *uint8, narg int32, nret int32, callerpc uintptr
 
 接着，尝试从 p0 上找一个空闲的 G：
 
-```golang
+```go
 // 从 p 的本地缓冲里获取一个没有使用的 g，初始化时为空，返回 nil
 newg := gfget(_p_)
 ```

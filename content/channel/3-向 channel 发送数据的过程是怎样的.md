@@ -7,7 +7,7 @@ slug: /send
 # 源码分析
 发送操作最终转化为 `chansend` 函数，直接上源码，同样大部分都注释了，可以看懂主流程：
 
-```golang
+```go
 // 位于 src/runtime/chan.go
 
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
@@ -140,7 +140,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 对于这一点，runtime 源码里注释了很多。这一条判断语句是为了在不阻塞发送的场景下快速检测到发送失败，好快速返回。
 
-```golang
+```go
 if !block && c.closed == 0 && ((c.dataqsiz == 0 && c.recvq.first == nil) || (c.dataqsiz > 0 && c.qcount == c.dataqsiz)) {
 	return false
 }
@@ -164,7 +164,7 @@ if !block && c.closed == 0 && ((c.dataqsiz == 0 && c.recvq.first == nil) || (c.d
 
 - 如果能从等待接收队列 recvq 里出队一个 sudog（代表一个 goroutine），说明此时 channel 是空的，没有元素，所以才会有等待接收者。这时会调用 send 函数将元素直接从发送者的栈拷贝到接收者的栈，关键操作由 `sendDirect` 函数完成。
 
-```golang
+```go
 // send 函数处理向一个空的 channel 发送操作
 
 // ep 指向被发送的元素，会被直接拷贝到接收的 goroutine
@@ -199,7 +199,7 @@ func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 
 继续看 `sendDirect` 函数：
 
-```golang
+```go
 // 向一个非缓冲型的 channel 发送数据、从一个无元素的（非缓冲型或缓冲型但空）的 channel
 // 接收数据，都会导致一个 goroutine 直接操作另一个 goroutine 的栈
 // 由于 GC 假设对栈的写操作只能发生在 goroutine 正在运行中并且由当前 goroutine 来写
@@ -223,7 +223,7 @@ func sendDirect(t *_type, sg *sudog, src unsafe.Pointer) {
 
 - 如果 `c.qcount < c.dataqsiz`，说明缓冲区可用（肯定是缓冲型的 channel）。先通过函数取出待发送元素应该去到的位置：
 
-```golang
+```go
 qp := chanbuf(c, c.sendx)
 
 // 返回循环队列里第 i 个元素的地址处
@@ -247,7 +247,7 @@ func chanbuf(c *hchan, i uint) unsafe.Pointer {
 # 案例分析
 好了，看完源码。我们接着来分析例子，代码如下：
 
-```golang
+```go
 func goroutineA(a <-chan int) {
 	val := <- a
 	fmt.Println("goroutine A received data: ", val)

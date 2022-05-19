@@ -39,7 +39,7 @@ slug: /happens-before
 
 我们直接来看例子：
 
-```golang
+```go
 var done = make(chan bool)
 var msg string
 
@@ -63,7 +63,7 @@ func main() {
 
 进一步利用前面提到的第 3 条 happened before 规则，修改一下代码：
 
-```golang
+```go
 var done = make(chan bool)
 var msg string
 

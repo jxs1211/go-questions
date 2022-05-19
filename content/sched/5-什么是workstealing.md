@@ -16,7 +16,7 @@ Go scheduler 使用 M:N 模型，在任一时刻，M 个 goroutines（G） 要�
 
 实际上，Go scheduler 每一轮调度要做的工作就是找到处于 runnable 的 goroutines，并执行它。找的顺序如下：
 
-```golang
+```go
 runtime.schedule() {
     // only 1/61 of the time, check the global runnable queue for a G.
     // if not found, check the local queue.

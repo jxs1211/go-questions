@@ -10,7 +10,7 @@ slug: /modify-private
 
 我们来看一个例子：
 
-```golang
+```go
 package main
 
 import (
@@ -50,7 +50,7 @@ name 是结构体的第一个成员，因此可以直接将 &p 解析成 *string
 
 我把 Programmer 结构体升级，多加一个字段：
 
-```golang
+```go
 type Programmer struct {
 	name string
 	age int
@@ -60,7 +60,7 @@ type Programmer struct {
 
 并且放在其他包，这样在 main 函数中，它的三个字段都是私有成员变量，不能直接修改。但我通过 unsafe.Sizeof() 函数可以获取成员大小，进而计算出成员的地址，直接修改内存。
 
-```golang
+```go
 func main() {
 	p := Programmer{"stefno", 18, "go"}
 	fmt.Println(p)

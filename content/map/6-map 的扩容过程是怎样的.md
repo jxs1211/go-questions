@@ -13,7 +13,7 @@ Go 语言采用一个 bucket 里装载 8 个 key，定位到某个 bucket 后，
 
 因此，需要有一个指标来衡量前面描述的情况，这就是`装载因子`。Go 源码里这样定义 `装载因子`：
 
-```golang
+```go
 loadFactor := count / (2^B)
 ```
 
@@ -26,7 +26,7 @@ count 就是 map 的元素个数，2^B 表示 bucket 数量。
 
 通过汇编语言可以找到赋值操作对应源码中的函数是 `mapassign`，对应扩容条件的源码如下：
 
-```golang
+```go
 // src/runtime/hashmap.go/mapassign
 
 // 触发扩容时机
@@ -70,7 +70,7 @@ func tooManyOverflowBuckets(noverflow uint16, B uint8) bool {
 
 我们先看 `hashGrow()` 函数所做的工作，再来看具体的搬迁 buckets 是如何进行的。
 
-```golang
+```go
 func hashGrow(t *maptype, h *hmap) {
 	// B+1 相当于是原来 2 倍的空间
 	bigger := uint8(1)
@@ -108,7 +108,7 @@ func hashGrow(t *maptype, h *hmap) {
 
 值得一说的是对 `h.flags` 的处理：
 
-```golang
+```go
 flags := h.flags &^ (iterator | oldIterator)
 if h.flags&iterator != 0 {
 	flags |= oldIterator
@@ -117,7 +117,7 @@ if h.flags&iterator != 0 {
 
 这里得先说下运算符：&^。这叫`按位置 0`运算符。例如：
 
-```golang
+```go
 x = 01010011
 y = 01010100
 z = x &^ y = 00000011
@@ -129,7 +129,7 @@ z = x &^ y = 00000011
 
 几个标志位如下：
 
-```golang
+```go
 // 可能有迭代器使用 buckets
 iterator     = 1
 // 可能有迭代器使用 oldbuckets
@@ -142,7 +142,7 @@ sameSizeGrow = 8
 
 再来看看真正执行搬迁工作的 growWork() 函数。
 
-```golang
+```go
 func growWork(t *maptype, h *hmap, bucket uintptr) {
 	// 确认搬迁老的 bucket 对应正在使用的 bucket
 	evacuate(t, h, bucket&h.oldbucketmask())
@@ -156,7 +156,7 @@ func growWork(t *maptype, h *hmap, bucket uintptr) {
 
 h.growing() 函数非常简单：
 
-```golang
+```go
 func (h *hmap) growing() bool {
 	return h.oldbuckets != nil
 }
@@ -172,7 +172,7 @@ func (h *hmap) growing() bool {
 
 源码如下：
 
-```golang
+```go
 func evacuate(t *maptype, h *hmap, oldbucket uintptr) {
 	// 定位老的 bucket 地址
 	b := (*bmap)(add(h.oldbuckets, oldbucket*uintptr(t.bucketsize)))
@@ -396,7 +396,7 @@ evacuate 函数每次只完成一个 bucket 的搬迁工作，因此要遍历完
 
 这是通过 tophash 值与新算出来的哈希值进行运算得到的：
 
-```golang
+```go
 if top&1 != 0 {
     // top hash 最低位为 1
     // 新算出来的 hash 值的 B 位置 1

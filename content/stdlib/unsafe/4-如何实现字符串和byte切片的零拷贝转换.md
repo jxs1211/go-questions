@@ -8,7 +8,7 @@ slug: /zero-conv
 
 完成这个任务，我们需要了解 slice 和 string 的底层数据结构：
 
-```golang
+```go
 type StringHeader struct {
 	Data uintptr
 	Len  int
@@ -23,7 +23,7 @@ type SliceHeader struct {
 
 上面是反射包下的结构体，路径：src/reflect/value.go。只需要共享底层 Data 和 Len 就可以实现 `zero-copy`。
 
-```golang
+```go
 func string2bytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&s))
 }

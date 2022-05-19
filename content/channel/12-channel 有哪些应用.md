@@ -17,7 +17,7 @@ channel 用于停止信号的场景还是挺多的，经常是关闭某个 chann
 
 有时候，需要执行某项操作，但又不想它耗费太长时间，上一个定时器就可以搞定：
 
-```golang
+```go
 select {
 	case <-time.After(100 * time.Millisecond):
 	case <-s.stopc:
@@ -29,7 +29,7 @@ select {
 
 定时执行某个任务，也比较简单：
 
-```golang
+```go
 func worker() {
 	ticker := time.Tick(1 * time.Second)
 	for {
@@ -48,7 +48,7 @@ func worker() {
 
 服务启动时，启动 n 个 worker，作为工作协程池，这些协程工作在一个 `for {}` 无限循环里，从某个 channel 消费工作任务并执行：
 
-```golang
+```go
 func main() {
 	taskCh := make(chan int, 100)
 	go worker(taskCh)
@@ -102,7 +102,7 @@ finish task: 5 by worker 2
 
 下面的例子来自《Go 语言高级编程》：
 
-```golang
+```go
 var limit = make(chan int, 3)
 
 func main() {

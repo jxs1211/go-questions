@@ -8,7 +8,7 @@ slug: /iface-eface
 
 从源码层面看一下：
 
-```golang
+```go
 type iface struct {
 	tab  *itab
 	data unsafe.Pointer
@@ -36,7 +36,7 @@ type itab struct {
 
 再看一下 `interfacetype` 类型，它描述的是接口的类型：
 
-```golang
+```go
 type interfacetype struct {
 	typ     _type
 	pkgpath name
@@ -52,7 +52,7 @@ type interfacetype struct {
 
 接着来看一下 `eface` 的源码：
 
-```golang
+```go
 type eface struct {
     _type *_type
     data  unsafe.Pointer
@@ -65,7 +65,7 @@ type eface struct {
 
 我们来看个例子：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -115,7 +115,7 @@ func convT2I(tab *itab, elem unsafe.Pointer) (i iface)
 
 作为补充，我们最后再来看下 `_type` 结构体：
 
-```golang
+```go
 type _type struct {
     // 类型大小
 	size       uintptr
@@ -139,7 +139,7 @@ type _type struct {
 
 Go 语言各种数据类型都是在 `_type` 字段的基础上，增加一些额外的字段来进行管理的：
 
-```golang
+```go
 type arraytype struct {
 	typ   _type
 	elem  *_type

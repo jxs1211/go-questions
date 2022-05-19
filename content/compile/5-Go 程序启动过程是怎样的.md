@@ -6,7 +6,7 @@ slug: /booting
 
 我们从一个 `Hello World` 的例子开始：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -53,7 +53,7 @@ TEXT _rt0_amd64_linux(SB),NOSPLIT,$-8
 
 主要是把 argc，argv 从内存拉到了寄存器。这里 LEAQ 是计算内存地址，然后把内存地址本身放进寄存器里，也就是把 argv 的地址放到了 SI 寄存器中。最后跳转到：
 
-```golang
+```go
 TEXT main(SB),NOSPLIT,$-8
 	MOVQ	$runtime·rt0_go(SB), AX
 	JMP	AX
@@ -115,7 +115,7 @@ main 函数里执行的一些重要的操作包括：新建一个线程执行 sy
 
 >当 main 函数执行结束之后，会执行 exit(0) 来退出进程。若执行 exit(0) 后，进程没有退出，main 函数最后的代码会一直访问非法地址：
 
-```golang
+```go
 exit(0)
 for {
 	var x *int32

@@ -15,7 +15,7 @@ map 深度相等的条件：
 
 直接将使用 map1 == map2 是错误的。这种写法只能比较 map 是否为 nil。
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -34,7 +34,7 @@ func main() {
 
 输出结果：
 
-```golang
+```go
 true
 true
 ```

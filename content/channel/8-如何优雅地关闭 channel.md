@@ -12,7 +12,7 @@ slug: /graceful-close
 
 一个比较粗糙的检查 channel 是否关闭的函数：
 
-```golang
+```go
 func IsClosed(ch <-chan T) bool {
 	select {
 	case <-ch:
@@ -68,7 +68,7 @@ func main() {
 
 解决方案就是增加一个传递关闭信号的 channel，receiver 通过信号 channel 下达关闭数据 channel 指令。senders 监听到关闭信号后，停止发送数据。代码如下：
 
-```golang
+```go
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
@@ -118,7 +118,7 @@ func main() {
 
 和第 3 种情况不同，这里有 M 个 receiver，如果直接还是采取第 3 种解决方案，由 receiver 直接关闭 stopCh 的话，就会重复关闭一个 channel，导致 panic。因此需要增加一个中间人，M 个 receiver 都向它发送关闭 dataCh 的“请求”，中间人收到第一个请求后，就会直接下达关闭 dataCh 的指令（通过关闭 stopCh，这时就不会发生重复关闭的情况，因为 stopCh 的发送方只有中间人一个）。另外，这里的 N 个 sender 也可以向中间人发送关闭 dataCh 的请求。
 
-```golang
+```go
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
@@ -197,7 +197,7 @@ func main() {
 
 如果，我们把 toStop 的容量声明成 Num(senders) + Num(receivers)，那发送 dataCh 请求的部分可以改成更简洁的形式：
 
-```golang
+```go
 ...
 toStop := make(chan string, NumReceivers + NumSenders)
 ...

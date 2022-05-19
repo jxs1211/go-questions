@@ -41,7 +41,7 @@ context 包的代码并不长，`context.go` 文件总共不到 500 行，其中
 ## Context
 现在可以直接看源码：
 
-```golang
+```go
 type Context interface {
 	// 当 context 被取消或者到了 deadline，返回一个被关闭的 channel
 	Done() <-chan struct{}
@@ -70,7 +70,7 @@ type Context interface {
 ## canceler
 再来看另外一个接口：
 
-```golang
+```go
 type canceler interface {
 	cancel(removeFromParent bool, err error)
 	Done() <-chan struct{}
@@ -93,7 +93,7 @@ caller 不应该去关心、干涉 callee 的情况，决定如何以及何时 r
 ## emptyCtx
 源码中定义了 `Context` 接口后，并且给出了一个实现：
 
-```golang
+```go
 type emptyCtx int
 
 func (*emptyCtx) Deadline() (deadline time.Time, ok bool) {
@@ -119,7 +119,7 @@ func (*emptyCtx) Value(key interface{}) interface{} {
 
 它被包装成：
 
-```golang
+```go
 var (
 	background = new(emptyCtx)
 	todo       = new(emptyCtx)
@@ -128,7 +128,7 @@ var (
 
 通过下面两个导出的函数（首字母大写）对外公开：
 
-```golang
+```go
 func Background() Context {
 	return background
 }
@@ -145,7 +145,7 @@ todo 通常用在并不知道传递什么 context的情形。例如，调用一�
 ## cancelCtx
 再来看一个重要的 context：
 
-```golang
+```go
 type cancelCtx struct {
 	Context
 
@@ -161,7 +161,7 @@ type cancelCtx struct {
 
 先来看 `Done()` 方法的实现：
 
-```golang
+```go
 func (c *cancelCtx) Done() <-chan struct{} {
 	c.mu.Lock()
 	if c.done == nil {
@@ -179,7 +179,7 @@ c.done 是“懒汉式”创建，只有调用了 Done() 方法的时候才会�
 
 接下来，我们重点关注 `cancel()` 方法的实现：
 
-```golang
+```go
 func (c *cancelCtx) cancel(removeFromParent bool, err error) {
     // 必须要传 err
 	if err == nil {
@@ -219,7 +219,7 @@ func (c *cancelCtx) cancel(removeFromParent bool, err error) {
 
 我们再来看创建一个可取消的 Context 的方法：
 
-```golang
+```go
 func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
 	c := newCancelCtx(parent)
 	propagateCancel(parent, &c)
@@ -237,7 +237,7 @@ func newCancelCtx(parent Context) cancelCtx {
 
 注意传给 WithCancel 方法的参数，前者是 true，也就是说取消的时候，需要将自己从父节点里删除。第二个参数则是一个固定的取消错误类型：
 
-```golang
+```go
 var Canceled = errors.New("context canceled")
 ```
 
@@ -247,7 +247,7 @@ var Canceled = errors.New("context canceled")
 
 当 `removeFromParent` 为 true 时，会将当前节点的 context 从父节点 context 中删除：
 
-```golang
+```go
 func removeChild(parent Context, child canceler) {
 	p, ok := parentCancelCtx(parent)
 	if !ok {
@@ -263,7 +263,7 @@ func removeChild(parent Context, child canceler) {
 
 最关键的一行：
 
-```golang
+```go
 delete(p.children, child)
 ```
 
@@ -277,7 +277,7 @@ delete(p.children, child)
 
 重点看 `propagateCancel()`：
 
-```golang
+```go
 func propagateCancel(parent Context, child canceler) {
 	// 父节点是个空节点
 	if parent.Done() == nil {
@@ -319,7 +319,7 @@ func propagateCancel(parent Context, child canceler) {
 
 其实不然。我们来看 `parentCancelCtx` 的代码：
 
-```golang
+```go
 func parentCancelCtx(parent Context) (*cancelCtx, bool) {
 	for {
 		switch c := parent.(type) {
@@ -340,7 +340,7 @@ func parentCancelCtx(parent Context) (*cancelCtx, bool) {
 
 由于 context 包的代码并不多，所以我直接把它 copy 出来了，然后在 else 语句里加上了几条打印语句，来验证上面的说法：
 
-```golang
+```go
 type MyContext struct {
     // 这里的 Context 是我 copy 出来的，所以前面不用加 context.
 	Context
@@ -383,7 +383,7 @@ context.Background.WithCancel
 
 再来说一下，select 语句里的两个 case 其实都不能删。
 
-```golang
+```go
 select {
 	case <-parent.Done():
 		child.cancel(false, parent.Err())
@@ -398,7 +398,7 @@ select {
 ## timerCtx
 timerCtx 基于 cancelCtx，只是多了一个 time.Timer 和一个 deadline。Timer 会在 deadline 到来时，自动取消 context。
 
-```golang
+```go
 type timerCtx struct {
 	cancelCtx
 	timer *time.Timer // Under cancelCtx.mu.
@@ -409,7 +409,7 @@ type timerCtx struct {
 
 timerCtx 首先是一个 cancelCtx，所以它能取消。看下 cancel() 方法：
 
-```golang
+```go
 func (c *timerCtx) cancel(removeFromParent bool, err error) {
 	// 直接调用 cancelCtx 的取消方法
 	c.cancelCtx.cancel(false, err)
@@ -429,7 +429,7 @@ func (c *timerCtx) cancel(removeFromParent bool, err error) {
 
 创建 timerCtx 的方法：
 
-```golang
+```go
 func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc) {
 	return WithDeadline(parent, time.Now().Add(timeout))
 }
@@ -437,7 +437,7 @@ func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc) {
 
 `WithTimeout` 函数直接调用了 `WithDeadline`，传入的 deadline 是当前时间加上 timeout 的时间，也就是从现在开始再经过 timeout 时间就算超时。也就是说，`WithDeadline` 需要用的是绝对时间。重点来看它：
 
-```golang
+```go
 func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc) {
 	if cur, ok := parent.Deadline(); ok && cur.Before(deadline) {
 		// 如果父节点 context 的 deadline 早于指定时间。直接构建一个可取消的 context。
@@ -479,7 +479,7 @@ func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc) {
 
 这个函数的最核心的一句是：
 
-```golang
+```go
 c.timer = time.AfterFunc(d, func() {
 	c.cancel(true, DeadlineExceeded)
 })
@@ -487,7 +487,7 @@ c.timer = time.AfterFunc(d, func() {
 
 c.timer 会在 d 时间间隔后，自动调用 cancel 函数，并且传入的错误就是 `DeadlineExceeded`：
 
-```golang
+```go
 var DeadlineExceeded error = deadlineExceededError{}
 
 type deadlineExceededError struct{}

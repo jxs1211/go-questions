@@ -13,7 +13,7 @@ Go 语言中，每个变量都有一个静态类型，在编译阶段就确定�
 
 Go 官方博客里就举了一个例子：
 
-```golang
+```go
 type MyInt int
 
 var i int
@@ -24,7 +24,7 @@ var j MyInt
 
 反射主要与 interface{} 类型相关。关于 interface 的底层结构，可以参考前面有关 interface 章节的内容，这里复习一下。
 
-```golang
+```go
 type iface struct {
 	tab  *itab
 	data unsafe.Pointer
@@ -48,7 +48,7 @@ type itab struct {
 
 实际上，iface 描述的是非空接口，它包含方法；与之相对的是 `eface`，描述的是空接口，不包含任何方法，Go 语言里有的类型都 `“实现了”` 空接口。
 
-```golang
+```go
 type eface struct {
     _type *_type
     data  unsafe.Pointer
@@ -65,7 +65,7 @@ type eface struct {
 
 Go 语言中最常见的就是 `Reader` 和 `Writer` 接口：
 
-```golang
+```go
 type Reader interface {
     Read(p []byte) (n int, err error)
 }
@@ -77,7 +77,7 @@ type Writer interface {
 
 接下来，就是接口之间的各种转换和赋值了：
 
-```golang
+```go
 var r io.Reader
 tty, err := os.OpenFile("/Users/qcrao/Desktop/test", os.O_RDWR, 0)
 if err != nil {
@@ -94,7 +94,7 @@ r = tty
 
 注意看上图，此时虽然 `fun` 所指向的函数只有一个 `Read` 函数，其实 `*os.File` 还包含 `Write` 函数，也就是说 `*os.File` 其实还实现了 `io.Writer` 接口。因此下面的断言语句可以执行：
 
-```golang
+```go
 var w io.Writer
 w = r.(io.Writer)
 ```
@@ -109,7 +109,7 @@ w = r.(io.Writer)
 
 最后，再来一个赋值：
 
-```golang
+```go
 var empty interface{}
 empty = w
 ```
@@ -126,7 +126,7 @@ empty = w
 
 先参考源码，分别定义一个`“伪装”`的 iface 和 eface 结构体。
 
-```golang
+```go
 type iface struct {
 	tab  *itab
 	data unsafe.Pointer
@@ -148,7 +148,7 @@ type eface struct {
 
 接着，将接口变量占据的内存内容强制解释成上面定义的类型，再打印出来：
 
-```golang
+```go
 package main
 
 import (
@@ -192,7 +192,7 @@ func main() {
 
 运行结果：
 
-```golang
+```go
 initial r: <nil>, <nil>
 tty: *os.File, &{0xc4200820f0}
 r: *os.File, &{0xc4200820f0}
@@ -212,7 +212,7 @@ reflect 包里定义了一个接口和一个结构体，即 `reflect.Type` 和 `
 
 reflect 包中提供了两个基础的关于反射的函数来获取上述的接口和结构体：
 
-```golang
+```go
 func TypeOf(i interface{}) Type 
 func ValueOf(i interface{}) Value
 ```
@@ -221,7 +221,7 @@ func ValueOf(i interface{}) Value
 
 看下源码：
 
-```golang
+```go
 func TypeOf(i interface{}) Type {
 	eface := *(*emptyInterface)(unsafe.Pointer(&i))
 	return toType(eface.typ)
@@ -230,7 +230,7 @@ func TypeOf(i interface{}) Type {
 
 这里的 `emptyInterface` 和上面提到的 `eface` 是一回事（字段名略有差异，字段是相同的），并且在不同的源码包：前者在 `reflect` 包，后者在 `runtime` 包。 `eface.typ` 就是动态类型。
 
-```golang
+```go
 type emptyInterface struct {
 	typ  *rtype
 	word unsafe.Pointer
@@ -239,7 +239,7 @@ type emptyInterface struct {
 
 至于 `toType` 函数，只是做了一个类型转换：
 
-```golang
+```go
 func toType(t *rtype) Type {
 	if t == nil {
 		return nil
@@ -250,7 +250,7 @@ func toType(t *rtype) Type {
 
 注意，返回值 `Type` 实际上是一个接口，定义了很多方法，用来获取类型相关的各种信息，而 `*rtype` 实现了 `Type` 接口。
 
-```golang
+```go
 type Type interface {
     // 所有的类型都可以调用下面这些函数
 
@@ -361,11 +361,11 @@ type Type interface {
 注意到 `Type` 方法集的倒数第二个方法 `common`
  返回的 `rtype`类型，它和上一篇文章讲到的 `_type` 是一回事，而且源代码里也注释了：两边要保持同步：
  
-```golang
+```go
  // rtype must be kept in sync with ../runtime/type.go:/^type._type.
 ```
 
-```golang
+```go
 type rtype struct {
 	size       uintptr
 	ptrdata    uintptr
@@ -385,7 +385,7 @@ type rtype struct {
 
 比如下面的 `arrayType` 和 `chanType` 都包含 `rytpe`，而前者还包含 slice，len 等和数组相关的信息；后者则包含 `dir` 表示通道方向的信息。
 
-```golang
+```go
 // arrayType represents a fixed array type.
 type arrayType struct {
 	rtype `reflect:"array"`
@@ -404,7 +404,7 @@ type chanType struct {
 
 注意到，`Type` 接口实现了 `String()` 函数，满足 `fmt.Stringer` 接口，因此使用 `fmt.Println` 打印的时候，输出的是 `String()` 的结果。另外，`fmt.Printf()` 函数，如果使用 `%T` 来作为格式参数，输出的是 `reflect.TypeOf` 的结果，也就是动态类型。例如：
 
-```golang
+```go
 fmt.Printf("%T", 3) // int
 ```
 
@@ -414,7 +414,7 @@ fmt.Printf("%T", 3) // int
 
 源码如下：
 
-```golang
+```go
 func ValueOf(i interface{}) Value {
 	if i == nil {
 		return Value{}
@@ -445,7 +445,7 @@ func unpackEface(i interface{}) Value {
 
 Value 结构体定义了很多方法，通过这些方法可以直接操作 Value 字段 ptr 所指向的实际数据：
 
-```golang
+```go
 // 设置切片的 len 字段，如果类型不是切片，就会panic
  func (v Value) SetLen(n int)
  
@@ -466,7 +466,7 @@ Value 结构体定义了很多方法，通过这些方法可以直接操作 Valu
 
 `Value` 字段还有很多其他的方法。例如：
 
-```golang
+```go
 // 用来获取 int 类型的值
 func (v Value) Int() int64
 
@@ -516,7 +516,7 @@ func (v Value) CallSlice(in []Value) []Value
 
 举一个经典例子：
 
-```golang
+```go
 var x float64 = 3.4
 v := reflect.ValueOf(x)
 v.SetFloat(7.1) // Error: will panic.
@@ -528,7 +528,7 @@ v.SetFloat(7.1) // Error: will panic.
 
 就像在一般的函数里那样，当我们想改变传入的变量时，使用指针就可以解决了。
 
-```golang
+```go
 var x float64 = 3.4
 p := reflect.ValueOf(&x)
 fmt.Println("type of p:", p.Type())
@@ -537,14 +537,14 @@ fmt.Println("settability of p:", p.CanSet())
 
 输出是这样的：
 
-```golang
+```go
 type of p: *float64
 settability of p: false
 ```
 
 `p` 还不是代表 `x`，`p.Elem()` 才真正代表 `x`，这样就可以真正操作 `x` 了：
 
-```golang
+```go
 v := p.Elem()
 v.SetFloat(7.1)
 fmt.Println(v.Interface()) // 7.1

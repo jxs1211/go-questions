@@ -7,7 +7,7 @@ slug: /delete
 
 写操作底层的执行函数是 `mapdelete`：
 
-```golang
+```go
 func mapdelete(t *maptype, h *hmap, key unsafe.Pointer) 
 ```
 
@@ -27,7 +27,7 @@ func mapdelete(t *maptype, h *hmap, key unsafe.Pointer)
 
 找到对应位置后，对 key 或者 value 进行“清零”操作：
 
-```golang
+```go
 // 对 key 清零
 if t.indirectkey {
 	*(*unsafe.Pointer)(k) = nil

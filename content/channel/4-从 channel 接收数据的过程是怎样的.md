@@ -11,7 +11,7 @@ slug: /recv
 
 经过编译器的处理后，这两种写法最后对应源码里的这两个函数：
 
-```golang
+```go
 // entry points for <- c from compiled code
 func chanrecv1(c *hchan, elem unsafe.Pointer) {
 	chanrecv(c, elem, true)
@@ -27,7 +27,7 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 
 无论如何，最终转向了 `chanrecv` 函数：
 
-```golang
+```go
 // 位于 src/runtime/chan.go
 
 // chanrecv 函数接收 channel c 的元素并将其写入 ep 所指向的内存地址。
@@ -184,7 +184,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 - 和发送函数一样，接下来搞了一个在非阻塞模式下，不用获取锁，快速检测到失败并且返回的操作。顺带插一句，我们平时在写代码的时候，找到一些边界条件，快速返回，能让代码逻辑更清晰，因为接下来的正常情况就比较少，更聚焦了，看代码的人也更能专注地看核心代码逻辑了。
 
-```golang
+```go
 	// 在非阻塞模式下，快速检测到失败，不用获取锁，快速返回 (false, false)
 	if !block && (c.dataqsiz == 0 && c.sendq.first == nil ||
 		c.dataqsiz > 0 && atomic.Loaduint(&c.qcount) == 0) &&
@@ -208,7 +208,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 于是，调用 recv 函数：
 
-```golang
+```go
 func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 	// 如果是非缓冲型的 channel
 	if c.dataqsiz == 0 {
@@ -258,7 +258,7 @@ func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 
 如果是非缓冲型的，就直接从发送者的栈拷贝到接收者的栈。
 
-```golang
+```go
 func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
 	// dst is on our stack or the heap, src is on another stack.
 	src := sg.elem
@@ -269,7 +269,7 @@ func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
 
 否则，就是缓冲型 channel，而 buf 又满了的情形。说明发送游标和接收游标重合了，因此需要先找到接收游标：
 
-```golang
+```go
 // chanbuf(c, i) is pointer to the i'th slot in the buffer.
 func chanbuf(c *hchan, i uint) unsafe.Pointer {
 	return add(c.buf, uintptr(i)*uintptr(c.elemsize))
@@ -292,7 +292,7 @@ func chanbuf(c *hchan, i uint) unsafe.Pointer {
 
 从 channel 接收和向 channel 发送数据的过程我们均会使用下面这个例子来进行说明：
 
-```golang
+```go
 func goroutineA(a <-chan int) {
 	val := <- a
 	fmt.Println("G1 received data: ", val)

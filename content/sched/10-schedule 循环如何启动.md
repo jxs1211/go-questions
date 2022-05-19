@@ -8,7 +8,7 @@ slug: /sched-loop-boot
 
 我们继续看代码。搞了半天，我们其实还在 `runtime·rt0_go` 函数里，执行完 `runtime·newproc(SB)` 后，两条 POP 指令将之前为调用它构建的参数弹出栈。好消息是，最后就只剩下一个函数了：
 
-```golang
+```go
 // start this M
 // 主线程进入调度循环，运行刚刚创建的 goroutine
 CALL	runtime·mstart(SB)
@@ -18,7 +18,7 @@ CALL	runtime·mstart(SB)
 
 `mstart` 函数设置了 stackguard0 和 stackguard1 字段后，就直接调用 mstart1() 函数：
 
-```golang
+```go
 func mstart1() {
     // 启动过程时 _g_ = m0.g0
     _g_ := getg()
@@ -60,7 +60,7 @@ func mstart1() {
 
 调用 `gosave` 函数来保存调度信息到 `g0.sched` 结构体，来看源码：
 
-```golang
+```go
 // void gosave(Gobuf*)
 // save state in Gobuf; setjmp
 TEXT runtime·gosave(SB), NOSPLIT, $0-8
@@ -97,7 +97,7 @@ TEXT runtime·gosave(SB), NOSPLIT, $0-8
 
 接下来，进入 schedule 函数，永不返回。
 
-```golang
+```go
 // 执行一轮调度器的工作：找到一个 runnable 的 goroutine，并且执行它
 // 永不返回
 func schedule() {
@@ -167,7 +167,7 @@ top:
 
 经过千辛万苦，终于找到了可以运行的 goroutine，调用 `execute(gp, inheritTime)` 切换到选出的 goroutine 栈执行，调度器的调度次数会在这里更新，源码如下：
 
-```golang
+```go
 // 调度 gp 在当前 M 上运行
 // 如果 inheritTime 为真，gp 执行当前的时间片
 // 否则，开启一个新的时间片
@@ -210,7 +210,7 @@ func execute(gp *g, inheritTime bool) {
 
 继续看 `gogo` 函数的实现，传入 `&gp.sched` 参数，源码如下：
 
-```golang
+```go
 TEXT runtime·gogo(SB), NOSPLIT, $16-8
     // 0(FP) 表示第一个参数，即 buf = &gp.sched
     MOVQ    buf+0(FP), BX       // gobuf
@@ -248,7 +248,7 @@ nilctxt:
 
 注释地比较详细了。核心的地方是：
 
-```golang
+```go
 MOVQ    gobuf_g(BX), DX
 // ……
 get_tls(CX)
@@ -259,7 +259,7 @@ MOVQ    DX, g(CX)
 
 可能需要提一下的是，Go plan9 汇编中的一些奇怪的符号：
 
-```golang
+```go
 MOVQ    buf+0(FP), BX  # &gp.sched --> BX
 ```
 

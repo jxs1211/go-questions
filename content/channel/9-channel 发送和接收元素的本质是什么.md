@@ -12,7 +12,7 @@ Channel 发送和接收元素的本质是什么？
 
 举一个例子：
 
-```
+```go
 type user struct {
 	name string
 	age int8
@@ -34,7 +34,7 @@ func printUser(u <-chan *user) {
 func main() {
 	c := make(chan *user, 5)
 	c <- g
-	fmt.Println(g)
+	fmt.Println(g) 
 	// modify g
 	g = &user{name: "Ankur Anand", age: 100}
 	go printUser(c)

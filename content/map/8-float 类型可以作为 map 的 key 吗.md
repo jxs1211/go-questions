@@ -10,7 +10,7 @@ slug: /float-as-key
 
 来看个例子：
 
-```golang
+```go
 func main() {
 	m := make(map[float64]int)
 	m[1.4] = 1
@@ -54,7 +54,7 @@ false
 
 具体是通过 `Float64frombits` 函数完成：
 
-```golang
+```go
 // Float64frombits returns the floating point number corresponding
 // the IEEE 754 binary representation b.
 func Float64frombits(b uint64) float64 { return *(*float64)(unsafe.Pointer(&b)) }
@@ -82,7 +82,7 @@ func Float64frombits(b uint64) float64 { return *(*float64)(unsafe.Pointer(&b)) 
 
 我们再来输出点东西：
 
-```golang
+```go
 package main
 
 import (
@@ -118,14 +118,14 @@ func main() {
 
 再来看一下 NAN（not a number）：
 
-```golang
+```go
 // NaN returns an IEEE 754 ``not-a-number'' value.
 func NaN() float64 { return Float64frombits(uvnan) }
 ```
 
 uvan 的定义为：
 
-```golang
+```go
 uvnan    = 0x7FF8000000000001
 ```
 
@@ -133,7 +133,7 @@ NAN() 直接调用 `Float64frombits`，传入写死的 const 型变量 `0x7FF800
 
 这是由类型的哈希函数决定的，例如，对于 64 位的浮点数，它的哈希函数如下：
 
-```golang
+```go
 func f64hash(p unsafe.Pointer, h uintptr) uintptr {
 	f := *(*float64)(p)
 	switch {

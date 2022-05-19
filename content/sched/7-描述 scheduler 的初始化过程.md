@@ -8,7 +8,7 @@ slug: /init
 
 Go scheduler 在源码中的结构体为 `schedt`，保存调度器的状态信息、全局的可运行 G 队列等。源码如下：
 
-```golang
+```go
 // 保存调度器的信息
 type schedt struct {
 	// accessed atomically. keep at top to ensure alignment on 32-bit systems.
@@ -89,7 +89,7 @@ type schedt struct {
 
 在 proc.go 和 runtime2.go 文件中，有一些很重要全局的变量，我们先列出来：
 
-```golang
+```go
 // 所有 g 的长度
 allglen     uintptr
 
@@ -134,7 +134,7 @@ g0           g
 
 我们从一个 `Hello World` 的例子来回顾一下 Go 程序初始化的过程：
 
-```golang
+```go
 package main
 
 import "fmt"
@@ -382,7 +382,7 @@ MOVL	AX, 0	// abort
 
 继续来看源码，L3 将 m0.tls 地址存储到 DI 寄存器，再调用 settls 完成 tls 的设置，tls 是 m 结构体中的一个数组。
 
-```golang
+```go
 // thread-local storage (for x86 extern register)
 tls [6]uintptr
 ```
@@ -397,7 +397,7 @@ tls [6]uintptr
 
 设置完 tls 之后，又来了一段验证上面 settls 是否能正常工作。如果不能，会直接 crash。
 
-```golang
+```go
 get_tls(BX)
 MOVQ	$0x123, g(BX)
 MOVQ	runtime·m0+m_tls(SB), AX
@@ -412,7 +412,7 @@ L2 将一个数 `0x123` 放入 `m.tls[0]` 处，L3 则将 `m.tls[0]` 处的数�
 
 继续看代码：
 
-```golang
+```go
 // set the per-goroutine and per-mach "registers"
 // 获取 fs 段基址到 BX 寄存器
 get_tls(BX)
@@ -433,7 +433,7 @@ MOVQ	AX, g_m(CX)
 
 L3 将 m.tls 地址存入 BX；L5 将 g0 的地址存入 CX；L7 将 CX，也就是 g0 的地址存入 m.tls[0]；L9 将 m0 的地址存入 AX；L13 将 g0 的地址存入 m0.g0；L16 将 m0 存入 g0.m。也就是：
 
-```golang
+```go
 tls[0] = g0
 m0.g0 = &g0
 g0.m = &m0
@@ -462,7 +462,7 @@ g0.m = &m0
 ![工作线程绑定 m0，g0](../assets/22.png)
 
 # 初始化 m0
-```golang
+```go
 MOVL	16(SP), AX		// copy argc
 MOVL	AX, 0(SP)
 MOVQ	24(SP), AX		// copy argv
@@ -480,7 +480,7 @@ L1-L2 将 16(SP) 处的内容移动到 0(SP)，也就是栈顶，通过前面的
 
 下面，我们来重点看 schedinit 函数：
 
-```golang
+```go
 // src/runtime/proc.go
 
 // The bootstrap sequence is:
@@ -556,7 +556,7 @@ func schedinit() {
 
 函数首先调用 `getg()` 函数获取当前正在运行的 `g`，`getg()` 在 `src/runtime/stubs.go` 中声明，真正的代码由编译器生成。
 
-```golang
+```go
 // getg returns the pointer to the current g.
 // The compiler rewrites calls to this function into instructions
 // that fetch the g directly (from TLS or from the dedicated register).
@@ -565,14 +565,14 @@ func getg() *g
 
 注释里也说了，getg 返回当前正在运行的 goroutine 的指针，它会从 tls 里取出 tls[0]，也就是当前运行的 goroutine 的地址。编译器插入类似下面的代码：
 
-```golang
+```go
 get_tls(CX) 
 MOVQ g(CX), BX; // BX存器里面现在放的是当前g结构体对象的地址
 ```
 
 继续往下看：
 
-```golang
+```go
 sched.maxmcount = 10000
 ```
 
@@ -580,7 +580,7 @@ sched.maxmcount = 10000
 
 然后，调用了一堆 init 函数，初始化各种配置，现在不去深究。只关心本小节的重点，m0 的初始化：
 
-```golang
+```go
 // 初始化 m
 func mcommoninit(mp *m) {
 	// 初始化过程中_g_ = g0
@@ -620,7 +620,7 @@ func mcommoninit(mp *m) {
 因为 sched 是一个全局变量，多个线程同时操作 sched 会有并发问题，因此先要加锁，操作结束之后再解锁。
 
 
-```golang
+```go
 mp.id = sched.mcount
 sched.mcount++
 checkmcount()
@@ -628,13 +628,13 @@ checkmcount()
 
 可以看到，m0 的 id 是 0，并且之后创建的 m 的 id 是递增的。`checkmcount()` 函数检查已创建系统线程是否超过了数量限制（10000）。
 
-```golang
+```go
 mp.alllink = allm
 ```
 
 将 m 挂到全局变量 allm 上，allm 是一个指向 m 的的指针。
 
-```golang
+```go
 atomicstorep(unsafe.Pointer(&allm), unsafe.Pointer(mp))
 ```
 
@@ -650,7 +650,7 @@ atomicstorep(unsafe.Pointer(&allm), unsafe.Pointer(mp))
 
 跳过一些其他的初始化代码，继续往后看：
 
-```golang
+```go
 procs := ncpu
 if n, ok := atoi32(gogetenv("GOMAXPROCS")); ok && n > 0 {
 	procs = n
@@ -664,7 +664,7 @@ if procs > _MaxGomaxprocs {
 
 来看最后一个核心的函数：
 
-```golang
+```go
 // src/runtime/proc.go
 
 func procresize(nprocs int32) *p {
@@ -766,7 +766,7 @@ func procresize(nprocs int32) *p {
 
 接着，调用函数 `acquirep` 将 p0 和 m0 关联起来。我们来详细看一下：
 
-```golang
+```go
 func acquirep(_p_ *p) {
 	// Do the part that isn't allowed to have write barriers.
 	acquirep1(_p_)
@@ -781,7 +781,7 @@ func acquirep(_p_ *p) {
 
 先调用 `acquirep1` 函数真正地进行关联，之后，将 p0 的 mcache 资源赋给 m0。再来看 `acquirep1`：
 
-```golang
+```go
 func acquirep1(_p_ *p) {
 	_g_ := getg()
 
@@ -795,7 +795,7 @@ func acquirep1(_p_ *p) {
 
 可以看到就是一些字段相互设置，执行完成后：
 
-```golang
+```go
 g0.m.p = p0
 p0.m = m0
 ```
@@ -806,7 +806,7 @@ p0.m = m0
 
 函数 `runqempty` 用来判断一个 P 是否是空闲，依据是 P 的本地 run queue 队列里有没有 runnable 的 G，如果没有，那 P 就是空闲的。
 
-```golang
+```go
 // src/runtime/proc.go
 
 // 如果 _p_ 的本地队列里没有待运行的 G，则返回 true
@@ -832,7 +832,7 @@ func runqempty(_p_ *p) bool {
 
 函数的最后，初始化了一个“随机分配器”：
 
-```golang
+```go
 stealOrder.reset(uint32(nprocs))
 ```
 

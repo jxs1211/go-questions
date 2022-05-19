@@ -10,7 +10,7 @@ map 不是线程安全的。
 
 检测写标志：
 
-```golang
+```go
 if h.flags&hashWriting == 0 {
 		throw("concurrent map writes")
 	}
@@ -18,6 +18,6 @@ if h.flags&hashWriting == 0 {
 
 设置写标志：
 
-```golang
+```go
 h.flags |= hashWriting
 ```
